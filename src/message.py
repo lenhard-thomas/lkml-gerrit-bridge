@@ -67,6 +67,14 @@ class Message(object):
     def __repr__(self) -> str:
         return str(self)
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Message):
+            return False
+        return (self.id == other.id and self.subject == other.subject
+        and self.from_ == other.from_ and self.in_reply_to == other.in_reply_to
+        and self.content == other.content and self.change_id == other.change_id
+        and self.archive_hash == other.archive_hash and self.children == other.children)
+
     def debug_info(self) -> str:
         return (f'Message ID: {self.id}\n'
                 f'Lore Link: {lore_link(self.id)}\n'
