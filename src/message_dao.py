@@ -44,7 +44,7 @@ class MessageDao(object):
             user = os.environ.get("USER"),
             password = os.environ.get("PASSWORD")
         )
-    
+
     def _initialize_tables(self) -> None:
         db_name = os.environ.get("DB")
         if not db_name:
@@ -109,6 +109,15 @@ class MessageDao(object):
         msg.children = self._get_children(message_id)
         return msg
 
+    @lru_cache()
+    def previous_version_candidates(self, message: Message) -> List[Message]:
+        reduced_subject = message.subject.partition("] ")[2].lower()
+        sql = "SELECT message_id FROM Messages WHERE from_=%s AND reduced_subject=%s"
+        with self.connection.cursor() as cursor:
+            cursor.execute(sql, (message.from_, reduced_subject))
+            res = cursor.fetchall()
+        return [self.get(message_id) for message_id in (tup[0] for tup in res)]
+
     def size(self) -> int:
         sql = "SELECT COUNT(*) FROM Messages"
         with self.connection.cursor() as cursor:
@@ -150,3 +159,6 @@ class FakeMessageDao(MessageDao):
 
     def get_last_hash(self) -> int:
         return self.last_hash
+
+    def previous_versions(self, message: Message) -> List[Message]:
+        return list(self._messages_seen.values())
